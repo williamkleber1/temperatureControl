@@ -1,5 +1,14 @@
 #define pin1 7
-int status = 0;
+#define DESLIGADO 0
+#define LIGADO 1
+#define RESETADO -1
+
+//variavel para saber o status do arcondicionado
+int arcondicionado = RESETADO;
+
+//variavel para saber o status do rele
+int rele = DESLIGADO;
+
 const int LM35 = A0; // Define o pino que lera a saída do LM35
 float temperatura;
 void setup() {
@@ -8,24 +17,41 @@ void setup() {
 }
 
 void loop() {
+  //recebe a temperatuda, pelo sensor lm35
   temperatura = (float(analogRead(LM35))*5/(1023))/0.01;
   Serial.print("Temperatura: ");
   Serial.println(temperatura);
 
-  if((temperatura >= 30) && (status == 0)){
+  /*caso tenha faltado energia, quando voltar o ar vai ligar
+  independente da temperatura atual*/
+  if(arcondicionado == RESETADO){
+    digitalWrite (pin1, LOW);
+    delay(2000);
+    arcondicionado = LIGADO;
+    rele = LIGADO;
+  }
+  /*agora vamos analisar as temperaturas*/
+
+ /*caso a sala esteja com temperatura acima de 29 graus, e o ar esteja desligado,ligaremos ele*/
+  else if((temperatura >= 30) && (arcondicionado == DESLIGADO)){
     digitalWrite (pin1, LOW);
     delay (2000);
-    //digitalWrite (pin1, HIGH);
-    //delay (2000);
-    status = 1;
+    arcondicionado = LIGADO;
+    rele = LIGADO;
   }
-  else if((temperatura < 23) && (status == 1)){
+
+  /*se a temperatura estiver abaixo de 23, e o ar estiver ligado, desligamos ele*/
+  else if((temperatura < 23) && (arcondicionado == LIGADO)){
     digitalWrite (pin1, LOW);
     delay (2000);
-    //digitalWrite (pin1, HIGH);
-    //delay (2000);
-    status = 0;
+    arcondicionado = DESLIGADO;
+    rele = LIGADO;
   }
-   digitalWrite (pin1, HIGH);
+
+  /*se tivermos acionado o rele, para manipular o ar, desligamos ele*/
+  if(rele == LIGADO){
+    digitalWrite (pin1, HIGH);
+    rele = DESLIGADO;
+  }
 
 }
